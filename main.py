@@ -1,3 +1,9 @@
+###########################################################
+# Filename: main.py
+# Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
+# Last Modified: 12/29/2020
+#
+
 import sys, pygame
 import board, tiles
 
@@ -6,13 +12,12 @@ pygame.init()
 running = True
 
 size = width, height = 640, 480
-tileSize = 16
 
 screen = pygame.display.set_mode(size)
 
-gameBoard = board.Board((128 * 2, 128 * 3))
+gameBoard = board.Board(16, (128 * 2, 128 * 3))
 bcw, bch = gameBoard.getTileBoardRelativeCenter(width, height)
-gameBoard.fillBoard(tileSize)
+gameBoard.fillBoard()
 
 while running:
     for event in pygame.event.get():
@@ -35,11 +40,11 @@ while running:
                         tileMatrix = gameBoard.updateSurrounding(scaledX, scaledY, w, h)
                     else:
                         tile.setUncovered(True)
+                        if tile.getValue() == 9:
+                            gameBoard.revealMines()
                 elif pressed3:
                     tile.setFlagged(not tile.getFlagged())
                 
-
-
     screen.fill((127,127,127))
     gameBoard.draw()
     screen.blit(gameBoard.getTileBoard(), (bcw, bch))

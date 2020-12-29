@@ -1,17 +1,22 @@
+###########################################################
+# Filename: tiles.py
+# Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
+# Last Modified: 12/29/2020
+#
+
 import pygame
 
 pygame.font.init()
 
-TILE_SIZE = 16
-MONOSPACE_FONT = pygame.font.SysFont("Consolas", int(TILE_SIZE * .9), True)
+DEFAULT_FONT = pygame.font.SysFont("Consolas", 16, True)
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, value = '', pos = (0, 0), color = (255, 255, 255), size = TILE_SIZE):
-        MONOSPACE_FONT = pygame.font.SysFont("Consolas", int(size * .9), True)
+    def __init__(self, value = '', pos = (0, 0), color = (255, 255, 255), size = 16, font=DEFAULT_FONT):
         pygame.sprite.Sprite.__init__(self)
 
         self.image = pygame.Surface((size, size))
 
+        self.font = font
         self.size = size
         self.color = color
         self.colorInverted = (255-self.color[0],255-self.color[1],255-self.color[2])
@@ -26,7 +31,7 @@ class Tile(pygame.sprite.Sprite):
 
     def redraw(self):
         if self.uncovered and self.value != '0':
-            number = MONOSPACE_FONT.render(str(self.value), True, self.colorInverted)
+            number = self.font.render(str(self.value), True, self.colorInverted)
 
             midwide = (self.size / 2) - (number.get_width() / 2)
             midhigh = (self.size / 2) - (number.get_height() / 2)
@@ -36,7 +41,7 @@ class Tile(pygame.sprite.Sprite):
         elif self.uncovered:
             self.image.fill(self.colorInverted)
         elif self.flagged:
-            number = MONOSPACE_FONT.render(str("F"), True, self.colorInverted)
+            number = self.font.render(str("F"), True, self.colorInverted)
 
             midwide = (self.size / 2) - (number.get_width() / 2)
             midhigh = (self.size / 2) - (number.get_height() / 2)

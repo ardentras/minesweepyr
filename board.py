@@ -1,3 +1,9 @@
+###########################################################
+# Filename: board.py
+# Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
+# Last Modified: 12/29/2020
+#
+
 import pygame
 import tiles
 import random
@@ -12,15 +18,15 @@ INV_PROB = 2
 MINE = 9
 
 class Board():
-    def __init__(self, boardSize):
+    def __init__(self, tileSize, boardSize):
+        self.setTileSize(tileSize)
         self.tileBoardSize = boardSize
         self.tileBoard = pygame.Surface(self.tileBoardSize)
         
     def draw(self):
         self.tileGroup.draw(self.tileBoard)
 
-    def fillBoard(self, size, difficulty = DIFFICULTY_EASY):
-        self.tileSize = size
+    def fillBoard(self, difficulty = DIFFICULTY_EASY):
         self.tileGroup = pygame.sprite.Group()
         self.mineCount = 0
 
@@ -35,6 +41,9 @@ class Board():
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
         board = [[0 for e in range(h)] for e in range(w)]
 
+        # Iterate over the probability map and set mines accordingly.
+        # Start with a minimum probability threshold and while the total number
+        # has not been reached, increment the threshold until all mines are set.
         while self.mineCount < self.flagable:
             for x in range(w):
                 for y in range(h):
@@ -62,9 +71,9 @@ class Board():
                 tile = object
 
                 if board[x][y] == MINE:
-                    tile = tiles.Tile(value="X", pos=(x, y), size=size)
+                    tile = tiles.Tile(value="X", pos=(x, y), font=self.monospaceFont)
                 else:
-                    tile = tiles.Tile(value=str(board[x][y]), pos=(x, y), size=size)
+                    tile = tiles.Tile(value=str(board[x][y]), pos=(x, y), font=self.monospaceFont)
 
                 self.tileGroup.add(tile)
                 self.tileMatrix[x][y] = tile
@@ -79,6 +88,13 @@ class Board():
                     
                     if tile.getValue() == 0:
                         self.updateSurrounding(x1, y1, w, h)
+    
+    def revealMines(self):
+        w, h = self.getScaledBounds()
+        for x in range(w):
+            for y in range(h):
+                if self.tileMatrix[x][y].getValue() == 9:
+                    self.tileMatrix[x][y].setUncovered(True)
 
     def getTile(self, x, y):
         return self.tileMatrix[x][y]
@@ -91,6 +107,10 @@ class Board():
 
     def getTileSize(self):
         return self.tileSize
+
+    def setTileSize(self, tileSize):
+        self.tileSize = tileSize
+        self.monospaceFont = pygame.font.SysFont("Consolas", int(self.tileSize * .9), True)
 
     def getScaledBounds(self):
         w = int(self.tileBoard.get_width() / self.tileSize)
