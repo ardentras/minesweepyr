@@ -9,9 +9,10 @@ import pygame
 pygame.font.init()
 
 DEFAULT_FONT = pygame.font.SysFont("Consolas", 16, True)
+MINE = 9
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, value = '', pos = (0, 0), color = (255, 255, 255), size = 16, font=DEFAULT_FONT):
+    def __init__(self, value = 0, pos = (0, 0), color = (255, 255, 255), size = 16, font=DEFAULT_FONT):
         pygame.sprite.Sprite.__init__(self)
 
         self.image = pygame.Surface((size, size))
@@ -30,40 +31,59 @@ class Tile(pygame.sprite.Sprite):
         self.redraw()
 
     def redraw(self):
-        if self.uncovered and self.value != '0':
-            number = self.font.render(str(self.value), True, self.colorInverted)
+        return
 
-            midwide = (self.size / 2) - (number.get_width() / 2)
-            midhigh = (self.size / 2) - (number.get_height() / 2)
+    def draw(self, value):
+        number = self.font.render(str(value), True, self.colorInverted)
 
-            self.image.fill(self.color)
-            self.image.blit(number, (midwide,midhigh))
-        elif self.uncovered:
-            self.image.fill(self.colorInverted)
-        elif self.flagged:
-            number = self.font.render(str("F"), True, self.colorInverted)
+        midwide = (self.size / 2) - (number.get_width() / 2)
+        midhigh = (self.size / 2) - (number.get_height() / 2)
 
-            midwide = (self.size / 2) - (number.get_width() / 2)
-            midhigh = (self.size / 2) - (number.get_height() / 2)
-
-            self.image.fill(self.color)
-            self.image.blit(number, (midwide,midhigh))
-        else:
-            self.image.fill(self.color)
+        self.image.fill(self.color)
+        self.image.blit(number, (midwide,midhigh))
 
     def setUncovered(self, uncovered):
-        self.uncovered = uncovered
-        self.redraw()
+        if not self.flagged:
+            self.uncovered = uncovered
+            self.redraw()
 
-    def getUncovered(self):
+    def isUncovered(self):
         return self.uncovered
 
     def setFlagged(self, flagged):
-        self.flagged = flagged
-        self.redraw()
+        if not self.uncovered:
+            self.flagged = flagged
+            self.redraw()
 
-    def getFlagged(self):
+    def isFlagged(self):
         return self.flagged
 
     def getValue(self):
         return int(self.value) if self.value != 'X' else 9
+
+class NumberTile(Tile):
+    def __init__(self, value = 0, pos = (0, 0), color = (255, 255, 255), size = 16, font=DEFAULT_FONT):
+        super().__init__(value, pos, color, size, font)
+
+    def redraw(self):
+        if self.uncovered:
+            if self.value > 0:
+                self.draw(self.value)
+            else:
+                self.image.fill(self.colorInverted)
+        elif self.flagged:
+            self.draw("F")
+        else:
+            self.image.fill(self.color)
+
+class MineTile(Tile):
+    def __init__(self, pos = (0, 0), color = (255, 255, 255), size = 16, font=DEFAULT_FONT):
+        super().__init__(MINE, pos, color, size, font)
+
+    def redraw(self):
+        if self.uncovered:
+            self.draw("X")
+        elif self.flagged:
+            self.draw("F")
+        else:
+            self.image.fill(self.color)

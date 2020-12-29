@@ -13,29 +13,34 @@ def processClick(event, gameBoard):
     bcw, bch = gameBoard.getTileBoardRelativeCenter()
     x = int(x - bcw)
     y = int(y - bch)
+
     boardRect = gameBoard.getTileBoard().get_rect()
     if boardRect.collidepoint((x, y)):
         scaledX = int(x / gameBoard.getTileSize())
         scaledY = int(y / gameBoard.getTileSize())
+
+        if not gameBoard.isPlayable():
+            gameBoard.fillBoard((scaledX, scaledY))
+
         tile = gameBoard.getTile(scaledX, scaledY)
         
         if pressed1:
-            if tile.getValue() == 0:
-                w, h = gameBoard.getScaledBounds()
-                tileMatrix = gameBoard.updateSurrounding(scaledX, scaledY, w, h)
-            else:
-                tile.setUncovered(True)
-                if tile.getValue() == 9:
-                    gameBoard.revealMines()
+            if not tile.isFlagged():
+                if tile.getValue() == 0:
+                    w, h = gameBoard.getScaledBounds()
+                    tileMatrix = gameBoard.updateSurrounding(scaledX, scaledY, w, h)
+                else:
+                    tile.setUncovered(True)
+                    if tile.getValue() == 9:
+                        gameBoard.revealMines()
         elif pressed3:
-            tile.setFlagged(not tile.getFlagged())
+            tile.setFlagged(not tile.isFlagged())
 
 pygame.init()
 
 screen = pygame.display.set_mode((640, 480))
 
 gameBoard = board.Board(16, (128 * 3, 128 * 3), screen.get_size())
-gameBoard.fillBoard()
 
 running = True
 while running:

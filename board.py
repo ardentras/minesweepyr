@@ -14,24 +14,27 @@ DIFFICULTY_HARD = 0.2
 DIFFICULTY_PRO = 0.35
 
 MIN_MINE_PROBABILITY = 0.05
-INV_PROB = 2
-MINE = 9
+INVALID_PROBABILITY = 2
 
 class Board():
     def __init__(self, tileSize, boardSize, screenSize):
+        self.playable = False
         self.setTileSize(tileSize)
         self.screenSize = screenSize
         self.tileBoardSize = boardSize
         self.tileBoard = pygame.Surface(self.tileBoardSize)
+
+        self.tileGroup = pygame.sprite.Group()
+        self.mineGroup = pygame.sprite.Group()
         
     def draw(self, screen):
         self.tileGroup.draw(self.tileBoard)
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
 
-    def fillBoard(self, difficulty = DIFFICULTY_EASY):
-        self.tileGroup = pygame.sprite.Group()
-        self.mineGroup = pygame.sprite.Group()
+    def fillBoard(self, startPos, difficulty = DIFFICULTY_EASY):
+        self.tileGroup.empty()
+        self.mineGroup.empty()
         self.mineCount = 0
 
         mineProb = MIN_MINE_PROBABILITY
@@ -47,6 +50,8 @@ class Board():
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
         board = [[0 for e in range(h)] for e in range(w)]
 
+        mineMatrix[startPos[0]][startPos[1]] = INVALID_PROBABILITY
+
         # Iterate over the probability map and set mines accordingly.
         # Start with a minimum probability threshold and while the total number
         # has not been reached, increment the threshold until all mines are set.
@@ -55,8 +60,8 @@ class Board():
                 for y in range(h):
                     if mineMatrix[x][y] < mineProb and self.mineCount < self.flagable:
                         self.mineCount = self.mineCount + 1
-                        mineMatrix[x][y] = INV_PROB
-                        board[x][y] = MINE
+                        mineMatrix[x][y] = INVALID_PROBABILITY
+                        board[x][y] = tiles.MINE
 
                         for x1 in range(x - 1 if x - 1 > 0 else 0, x + 2 if x + 2 < w else w):
                             for y1 in range(y - 1 if y - 1 > 0 else 0, y + 2 if y + 2 < h else h):
@@ -76,27 +81,30 @@ class Board():
             for y in range(h):
                 tile = object
 
-                if board[x][y] == MINE:
-                    tile = tiles.Tile(value="X", pos=(x, y), font=self.monospaceFont)
+                if board[x][y] == tiles.MINE:
+                    tile = tiles.MineTile(pos=(x, y), font=self.monospaceFont)
                     self.mineGroup.add(tile)
                 else:
-                    tile = tiles.Tile(value=str(board[x][y]), pos=(x, y), font=self.monospaceFont)
+                    tile = tiles.NumberTile(value=board[x][y], pos=(x, y), font=self.monospaceFont)
                     self.tileGroup.add(tile)
 
                 self.tileMatrix[x][y] = tile
+
+        self.playable = True
 
     def updateSurrounding(self, x, y, w, h):
         for x1 in range(x - 1 if x - 1 > 0 else 0, x + 2 if x + 2 < w else w):
             for y1 in range(y - 1 if y - 1 > 0 else 0, y + 2 if y + 2 < h else h):
                 tile = self.tileMatrix[x1][y1]
                 
-                if tile.getUncovered() == False:
+                if tile.isUncovered() == False:
                     self.tileMatrix[x1][y1].setUncovered(True)
                     
                     if tile.getValue() == 0:
                         self.updateSurrounding(x1, y1, w, h)
     
     def revealMines(self):
+        self.playable = False
         w, h = self.getScaledBounds()
         for x in range(w):
             for y in range(h):
@@ -117,7 +125,7 @@ class Board():
 
     def setTileSize(self, tileSize):
         self.tileSize = tileSize
-        self.monospaceFont = pygame.font.SysFont("Consolas", int(self.tileSize * .9), True)
+        self.monospaceFont = pygame.font.SysFont("Consolas", int(self.tileSize * .9))
 
     def getScaledBounds(self):
         w = int(self.tileBoard.get_width() / self.tileSize)
@@ -126,3 +134,6 @@ class Board():
         if self.tileBoard.get_height() % self.tileSize != 0: h = h - 1
 
         return (w,h)
+    
+    def isPlayable(self):
+        return self.playable
