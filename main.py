@@ -22,19 +22,11 @@ def processClick(event, gameBoard):
         if not gameBoard.isPlayable():
             gameBoard.fillBoard((scaledX, scaledY))
 
-        tile = gameBoard.getTile(scaledX, scaledY)
-        
         if pressed1:
-            if not tile.isFlagged():
-                if tile.getValue() == 0:
-                    w, h = gameBoard.getScaledBounds()
-                    tileMatrix = gameBoard.updateSurrounding(scaledX, scaledY, w, h)
-                else:
-                    tile.setUncovered(True)
-                    if tile.getValue() == 9:
-                        gameBoard.revealMines()
+            if not gameBoard.getTile(scaledX, scaledY).isFlagged():
+                gameBoard.setUncovered(scaledX, scaledY)
         elif pressed3:
-            tile.setFlagged(not tile.isFlagged())
+            gameBoard.flipFlagged(scaledX, scaledY)
 
 pygame.init()
 

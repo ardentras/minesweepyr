@@ -36,6 +36,7 @@ class Board():
         self.tileGroup.empty()
         self.mineGroup.empty()
         self.mineCount = 0
+        self.countUncoveredTiles = 0
 
         mineProb = MIN_MINE_PROBABILITY
         random.seed()
@@ -95,13 +96,8 @@ class Board():
     def updateSurrounding(self, x, y, w, h):
         for x1 in range(x - 1 if x - 1 > 0 else 0, x + 2 if x + 2 < w else w):
             for y1 in range(y - 1 if y - 1 > 0 else 0, y + 2 if y + 2 < h else h):
-                tile = self.tileMatrix[x1][y1]
-                
-                if tile.isUncovered() == False:
-                    self.tileMatrix[x1][y1].setUncovered(True)
-                    
-                    if tile.getValue() == 0:
-                        self.updateSurrounding(x1, y1, w, h)
+                if self.tileMatrix[x1][y1].isUncovered() == False:
+                    self.setUncovered(x1, y1)
     
     def revealMines(self):
         self.playable = False
@@ -110,6 +106,25 @@ class Board():
             for y in range(h):
                 if self.tileMatrix[x][y].getValue() == 9:
                     self.tileMatrix[x][y].setUncovered(True)
+
+    def setUncovered(self, x, y):
+        self.countUncoveredTiles = self.countUncoveredTiles + 1
+        self.tileMatrix[x][y].setUncovered(True)
+        
+        if self.tileMatrix[x][y].getValue() == 9:
+            self.revealMines()
+        elif self.tileMatrix[x][y].getValue() == 0:
+            w, h = self.getScaledBounds()
+            self.updateSurrounding(x, y, w, h)
+
+        if self.countUncoveredTiles + self.mineCount == self.totalTiles:
+            self.playable = False
+            print("You win!")
+            
+    def flipFlagged(self, x, y):
+        inc = 1 if self.tileMatrix[x][y].isFlagged() else -1
+        self.flagable = self.flagable + inc
+        self.tileMatrix[x][y].setFlagged(not self.tileMatrix[x][y].isFlagged())
 
     def getTile(self, x, y):
         return self.tileMatrix[x][y]
