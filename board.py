@@ -18,24 +18,30 @@ INV_PROB = 2
 MINE = 9
 
 class Board():
-    def __init__(self, tileSize, boardSize):
+    def __init__(self, tileSize, boardSize, screenSize):
         self.setTileSize(tileSize)
+        self.screenSize = screenSize
         self.tileBoardSize = boardSize
         self.tileBoard = pygame.Surface(self.tileBoardSize)
         
-    def draw(self):
+    def draw(self, screen):
         self.tileGroup.draw(self.tileBoard)
+        self.mineGroup.draw(self.tileBoard)
+        screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
 
     def fillBoard(self, difficulty = DIFFICULTY_EASY):
         self.tileGroup = pygame.sprite.Group()
+        self.mineGroup = pygame.sprite.Group()
         self.mineCount = 0
 
         mineProb = MIN_MINE_PROBABILITY
         random.seed()
 
         w, h = self.getScaledBounds()
+        self.totalTiles = w * h
         self.flagable = int(w * h * difficulty)
         print("total mines:", self.flagable)
+        print("total tiles:", self.totalTiles)
 
         self.tileMatrix = [[object for e in range(h)] for e in range(w)]
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
@@ -72,10 +78,11 @@ class Board():
 
                 if board[x][y] == MINE:
                     tile = tiles.Tile(value="X", pos=(x, y), font=self.monospaceFont)
+                    self.mineGroup.add(tile)
                 else:
                     tile = tiles.Tile(value=str(board[x][y]), pos=(x, y), font=self.monospaceFont)
+                    self.tileGroup.add(tile)
 
-                self.tileGroup.add(tile)
                 self.tileMatrix[x][y] = tile
 
     def updateSurrounding(self, x, y, w, h):
@@ -102,8 +109,8 @@ class Board():
     def getTileBoard(self):
         return self.tileBoard
 
-    def getTileBoardRelativeCenter(self, width, height):
-        return ((width / 2) - (self.tileBoard.get_width() / 2), (height / 2) - (self.tileBoard.get_height() / 2))
+    def getTileBoardRelativeCenter(self):
+        return ((self.screenSize[0] / 2) - (self.tileBoard.get_width() / 2), (self.screenSize[1] / 2) - (self.tileBoard.get_height() / 2))
 
     def getTileSize(self):
         return self.tileSize
