@@ -89,7 +89,7 @@ class MineTile(Tile):
 
     def redraw(self):
         if self.uncovered:
-            self.draw("X")
+            self.draw("X", (219, 55, 0))
         elif self.flagged:
             self.draw("F", self.color)
         else:
