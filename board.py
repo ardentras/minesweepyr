@@ -16,9 +16,15 @@ DIFFICULTY_PRO = 0.35
 MIN_MINE_PROBABILITY = 0.05
 INVALID_PROBABILITY = 2
 
+TEXT_COLOR = (255, 255, 255)
+TEXT_TOP_MARGIN = 5
+
 class Board():
     def __init__(self, tileSize, boardSize, screenSize):
         self.playable = False
+        self.won = False
+
+        self.flaggable = 0
         self.setTileSize(tileSize)
         self.screenSize = screenSize
         self.tileBoardSize = boardSize
@@ -26,13 +32,28 @@ class Board():
 
         self.tileGroup = pygame.sprite.Group()
         self.mineGroup = pygame.sprite.Group()
+       
+        self.winText = self.monospaceFont.render("Congratulations, you won!", True, TEXT_COLOR)
+        self.playAgainText = self.monospaceFont.render("Click anywhere on the board to start.", True, TEXT_COLOR)
+
+        self.difficulty = DIFFICULTY_EASY
         
     def draw(self, screen):
         self.tileGroup.draw(self.tileBoard)
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
 
-    def fillBoard(self, startPos, difficulty = DIFFICULTY_EASY):
+        if not self.playable:
+            screen.blit(self.playAgainText, ((self.screenSize[0] / 2) - (self.playAgainText.get_width() / 2), (self.playAgainText.get_height() + (TEXT_TOP_MARGIN * 2))))
+
+        if self.won:
+            screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_TOP_MARGIN))
+        else:
+            flagsLeftText = self.monospaceFont.render("Flags left: %s" % (self.flaggable), True, TEXT_COLOR)
+            screen.blit(flagsLeftText, ((self.screenSize[0] / 2) - (flagsLeftText.get_width() / 2), TEXT_TOP_MARGIN))
+
+    def fillBoard(self, startPos):
+        self.won = False
         self.tileGroup.empty()
         self.mineGroup.empty()
         self.mineCount = 0
@@ -43,8 +64,8 @@ class Board():
 
         w, h = self.getScaledBounds()
         self.totalTiles = w * h
-        self.flagable = int(w * h * difficulty)
-        print("total mines:", self.flagable)
+        self.flaggable = int(w * h * self.difficulty)
+        print("total mines:", self.flaggable)
         print("total tiles:", self.totalTiles)
 
         self.tileMatrix = [[object for e in range(h)] for e in range(w)]
@@ -56,10 +77,10 @@ class Board():
         # Iterate over the probability map and set mines accordingly.
         # Start with a minimum probability threshold and while the total number
         # has not been reached, increment the threshold until all mines are set.
-        while self.mineCount < self.flagable:
+        while self.mineCount < self.flaggable:
             for x in range(w):
                 for y in range(h):
-                    if mineMatrix[x][y] < mineProb and self.mineCount < self.flagable:
+                    if mineMatrix[x][y] < mineProb and self.mineCount < self.flaggable:
                         self.mineCount = self.mineCount + 1
                         mineMatrix[x][y] = INVALID_PROBABILITY
                         board[x][y] = tiles.MINE
@@ -69,11 +90,11 @@ class Board():
                                 if board[x1][y1] < 8:
                                     board[x1][y1] = board[x1][y1] + 1
 
-                    if self.mineCount >= self.flagable:
+                    if self.mineCount >= self.flaggable:
                         break
-                if self.mineCount >= self.flagable:
+                if self.mineCount >= self.flaggable:
                     break
-            if self.mineCount >= self.flagable:
+            if self.mineCount >= self.flaggable:
                 break
             
             mineProb = mineProb + 0.05
@@ -118,13 +139,26 @@ class Board():
             self.updateSurrounding(x, y, w, h)
 
         if self.countUncoveredTiles + self.mineCount == self.totalTiles:
-            self.playable = False
-            print("You win!")
-            
+            self.win()
+
     def flipFlagged(self, x, y):
         inc = 1 if self.tileMatrix[x][y].isFlagged() else -1
-        self.flagable = self.flagable + inc
+        self.flaggable = self.flaggable + inc
         self.tileMatrix[x][y].setFlagged(not self.tileMatrix[x][y].isFlagged())
+
+        if self.flaggable == 0:
+            allFlagged = True
+            for mine in self.mineGroup:
+                if not mine.isFlagged():
+                    allFlagged = False
+                    break
+            
+            if allFlagged:
+                self.win()
+
+    def win(self):
+        self.playable = False
+        self.won = True
 
     def getTile(self, x, y):
         return self.tileMatrix[x][y]
@@ -152,3 +186,6 @@ class Board():
     
     def isPlayable(self):
         return self.playable
+
+    def setDifficulty(self, difficulty):
+        self.difficulty = difficulty

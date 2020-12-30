@@ -26,7 +26,8 @@ def processClick(event, gameBoard):
             if not gameBoard.getTile(scaledX, scaledY).isFlagged():
                 gameBoard.setUncovered(scaledX, scaledY)
         elif pressed3:
-            gameBoard.flipFlagged(scaledX, scaledY)
+            if not gameBoard.getTile(scaledX, scaledY).isUncovered():
+                gameBoard.flipFlagged(scaledX, scaledY)
 
 pygame.init()
 
