@@ -17,6 +17,8 @@ def processClick(event, gameBoard):
     y = int(y - bch)
 
     boardRect = gameBoard.getTileBoard().get_rect()
+    difficultyLeftButtonRect = gameBoard.getDifficultyLeftButton().get_rect()
+    difficultyRightButtonRect = gameBoard.getDifficultyRightButton().get_rect()
     if boardRect.collidepoint((x, y)):
         scaledX = int(x / gameBoard.getTileSize())
         scaledY = int(y / gameBoard.getTileSize())
@@ -30,6 +32,11 @@ def processClick(event, gameBoard):
         elif pressed3:
             if not gameBoard.getTile(scaledX, scaledY).isUncovered():
                 gameBoard.flipFlagged(scaledX, scaledY)
+    elif difficultyLeftButtonRect.move(gameBoard.getDifficultyLeftButtonPosition()).collidepoint(event.pos):
+        print("hit")
+        gameBoard.difficultyRotateLeft()
+    elif difficultyRightButtonRect.move(gameBoard.getDifficultyRightButtonPosition()).collidepoint(event.pos):
+        gameBoard.difficultyRotateRight()
 
 pygame.init()
 

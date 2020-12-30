@@ -10,13 +10,18 @@
 import pygame
 import colors, tiles
 import random
+from collections import deque
 
-DIFFICULTIES = [0.05, 0.1, 0.2, 0.35]
-DIFFICULTY_STRINGS = ["EASY", "MEDIUM", "HARD", "PRO"]
-DIFFICULTY_EASY = 0
-DIFFICULTY_MED = 1
-DIFFICULTY_HARD = 2
-DIFFICULTY_PRO = 3
+class Difficulty():
+    def __init__(self, name, modifier):
+        self.name = name
+        self.modifier = modifier
+    
+    def getName(self):
+        return self.name
+    
+    def getModifier(self):
+        return self.modifier
 
 MIN_MINE_PROBABILITY = 0.05
 INVALID_PROBABILITY = 2
@@ -30,6 +35,12 @@ class Board():
     def __init__(self, tileSize, boardSize, screenSize):
         self.playable = False
         self.won = False
+
+        self.DIFFICULTIES = deque()
+        self.DIFFICULTIES.append(Difficulty("EASY", 0.05))
+        self.DIFFICULTIES.append(Difficulty("MEDIUM", 0.1))
+        self.DIFFICULTIES.append(Difficulty("HARD", 0.2))
+        self.DIFFICULTIES.append(Difficulty("PRO", 0.35))
 
         self.flaggable = 0
         self.setTileSize(tileSize)
@@ -46,16 +57,31 @@ class Board():
         self.winText = self.monospaceFont.render("Congratulations, you won!", True, TEXT_COLOR)
         self.howToPlayText = self.monospaceFont.render("Left click to reveal. Right click to flag.", True, TEXT_COLOR)
         self.playAgainText = self.monospaceFont.render("Click anywhere on the board to start.", True, TEXT_COLOR)
+        self.difficultyText = self.monospaceFont.render("DIFFICULTY", True, TEXT_COLOR)
+        self.difficultyTextPosition = (0, 0)
 
-        self.difficulty = DIFFICULTY_EASY
+        self.difficultyLeftButton = self.monospaceFont.render("<", True, TEXT_COLOR)
+        self.difficultyRightButton = self.monospaceFont.render(">", True, TEXT_COLOR)
+        self.difficultyLeftButtonPosition = (0, 0)
+        self.difficultyRightButtonPosition = (0, 0)
+
+        self.difficulty = self.DIFFICULTIES.popleft()
         
     def draw(self, screen):
         self.tileGroup.draw(self.tileBoard)
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
         
-        difficultyText = self.monospaceFont.render("DIFFICULTY: %s" % DIFFICULTY_STRINGS[self.difficulty], True, TEXT_COLOR)
-        screen.blit(difficultyText, ((self.screenSize[0] / 2) - (difficultyText.get_width() / 2), self.screenSize[1] - (difficultyText.get_height() + TEXT_MARGIN)))
+        self.difficultyTextPosition = ((self.screenSize[0] / 2) - (self.difficultyText.get_width() / 2), self.screenSize[1] - ((self.difficultyText.get_height() + TEXT_MARGIN) * 2))
+        self.difficultyLeftButtonPosition = (self.difficultyTextPosition[0] - self.difficultyLeftButton.get_width() - TEXT_MARGIN, self.difficultyTextPosition[1])
+        self.difficultyRightButtonPosition = (self.difficultyTextPosition[0] + self.difficultyText.get_width() + TEXT_MARGIN, self.difficultyTextPosition[1])
+
+        difficulty = self.monospaceFont.render(self.difficulty.getName(), True, TEXT_COLOR)
+        screen.blit(difficulty, ((self.screenSize[0] / 2) - (difficulty.get_width() / 2), self.screenSize[1] - (difficulty.get_height() + TEXT_MARGIN)))
+        screen.blit(self.difficultyLeftButton, self.difficultyLeftButtonPosition)
+        screen.blit(self.difficultyText, self.difficultyTextPosition)
+        screen.blit(self.difficultyRightButton, self.difficultyRightButtonPosition)
+        screen.blit(self.difficultyText, self.difficultyTextPosition)
 
         if self.won:
             screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_MARGIN))
@@ -81,7 +107,7 @@ class Board():
 
         w, h = self.getScaledBounds()
         self.totalTiles = w * h
-        self.flaggable = int(w * h * DIFFICULTIES[self.difficulty])
+        self.flaggable = int(w * h * self.difficulty.getModifier())
 
         self.tileMatrix = [[object for e in range(h)] for e in range(w)]
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
@@ -208,5 +234,25 @@ class Board():
     def isPlayable(self):
         return self.playable
 
-    def setDifficulty(self, difficulty):
-        self.difficulty = difficulty
+    def getDifficultyLeftButton(self):
+        return self.difficultyLeftButton
+
+    def getDifficultyRightButton(self):
+        return self.difficultyRightButton
+
+    def getDifficultyTextPosition(self):
+        return self.difficultyTextPosition
+
+    def getDifficultyLeftButtonPosition(self):
+        return self.difficultyLeftButtonPosition
+
+    def getDifficultyRightButtonPosition(self):
+        return self.difficultyRightButtonPosition
+
+    def difficultyRotateLeft(self):
+        self.DIFFICULTIES.appendleft(self.difficulty)
+        self.difficulty = self.DIFFICULTIES.pop()
+
+    def difficultyRotateRight(self):
+        self.DIFFICULTIES.append(self.difficulty)
+        self.difficulty = self.DIFFICULTIES.popleft()
