@@ -18,7 +18,9 @@ class Tile(pygame.sprite.Sprite):
     def __init__(self, value = 0, pos = (0, 0), color = colors.WHITE, size = 16, font=DEFAULT_FONT):
         pygame.sprite.Sprite.__init__(self)
 
+        self.borderScale = .95
         self.image = pygame.Surface((size, size))
+        self.tile = pygame.Surface((size * self.borderScale, size * self.borderScale))
 
         self.font = font
         self.size = size
@@ -37,17 +39,22 @@ class Tile(pygame.sprite.Sprite):
     def redraw(self):
         return
 
-    def draw(self, value, bkg=None):
+    def draw(self, value, bkg=None, border=colors.LTGRAY):
         if bkg == None:
             bkg = self.colorDimmed
             
         number = self.font.render(str(value), True, self.colorInverted)
 
-        midwide = (self.size / 2) - (number.get_width() / 2)
-        midhigh = (self.size / 2) - (number.get_height() / 2)
+        numMidwide = (self.size / 2) - (number.get_width() / 2)
+        numMidhigh = (self.size / 2) - (number.get_height() / 2)
+        tileMidwide = (self.size / 2) - ((self.size * self.borderScale) / 2)
+        tileMidhigh = (self.size / 2) - ((self.size * self.borderScale) / 2)
 
-        self.image.fill(bkg)
-        self.image.blit(number, (midwide,midhigh))
+        self.tile.fill(bkg)
+        self.image.fill(border)
+        
+        self.image.blit(self.tile, (tileMidwide,tileMidhigh))
+        self.image.blit(number, (numMidwide,numMidhigh))
 
     def setUncovered(self, uncovered):
         if not self.flagged:
@@ -81,7 +88,7 @@ class NumberTile(Tile):
         elif self.flagged:
             self.draw("F", self.color)
         else:
-            self.image.fill(self.color)
+            self.draw("", self.color)
 
 class MineTile(Tile):
     def __init__(self, pos = (0, 0), color = colors.WHITE, size = 16, font=DEFAULT_FONT):
@@ -93,4 +100,4 @@ class MineTile(Tile):
         elif self.flagged:
             self.draw("F", self.color)
         else:
-            self.image.fill(self.color)
+            self.draw("", self.color)
