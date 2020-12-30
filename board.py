@@ -113,7 +113,10 @@ class Board():
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
         board = [[0 for e in range(h)] for e in range(w)]
 
-        mineMatrix[startPos[0]][startPos[1]] = INVALID_PROBABILITY
+        # Ensures that first click always starts in a blank space
+        for x in range(startPos[0] - 1 if startPos[0] - 1 > 0 else 0, startPos[0] + 2 if startPos[0] + 2 < w else w):
+            for y in range(startPos[1] - 1 if startPos[1] - 1 > 0 else 0, startPos[1] + 2 if startPos[1] + 2 < h else h):
+                mineMatrix[x][y] = INVALID_PROBABILITY
 
         # Iterate over the probability map and set mines accordingly.
         # Start with a minimum probability threshold and while the total number
@@ -170,6 +173,7 @@ class Board():
         for x in range(w):
             for y in range(h):
                 if self.tileMatrix[x][y].getValue() == 9:
+                    self.tileMatrix[x][y].setFlagged(False)
                     self.tileMatrix[x][y].setUncovered(True)
 
     def uncoverTile(self, x, y):

@@ -40,6 +40,7 @@ def processClick(event, gameBoard):
 
 pygame.init()
 
+pygame.display.set_caption("Minesweepyr")
 screen = pygame.display.set_mode((640, 480))
 
 gameBoard = board.Board(16, (128 * 3, 128 * 3), screen.get_size())
