@@ -3,9 +3,11 @@
 # Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
 # Last Modified: 12/29/2020
 #
+# entrypoint and main loop
+#
 
 import sys, pygame
-import board
+import colors, board
 
 def processClick(event, gameBoard):
     pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
@@ -24,7 +26,7 @@ def processClick(event, gameBoard):
 
         if pressed1:
             if not gameBoard.getTile(scaledX, scaledY).isFlagged():
-                gameBoard.setUncovered(scaledX, scaledY)
+                gameBoard.uncover(scaledX, scaledY)
         elif pressed3:
             if not gameBoard.getTile(scaledX, scaledY).isUncovered():
                 gameBoard.flipFlagged(scaledX, scaledY)
@@ -43,7 +45,7 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             processClick(event, gameBoard)
                 
-    screen.fill((127,127,127))
+    screen.fill(colors.GRAY)
     gameBoard.draw(screen)
     
     pygame.display.flip()

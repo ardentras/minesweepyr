@@ -3,21 +3,28 @@
 # Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
 # Last Modified: 12/29/2020
 #
+# Everything drawn to the screen that's related to the
+# game board and game actions
+#
 
 import pygame
-import tiles
+import colors, tiles
 import random
 
-DIFFICULTY_EASY = 0.05
-DIFFICULTY_MED = 0.1
-DIFFICULTY_HARD = 0.2
-DIFFICULTY_PRO = 0.35
+DIFFICULTIES = [0.05, 0.1, 0.2, 0.35]
+DIFFICULTY_STRINGS = ["EASY", "MEDIUM", "HARD", "PRO"]
+DIFFICULTY_EASY = 0
+DIFFICULTY_MED = 1
+DIFFICULTY_HARD = 2
+DIFFICULTY_PRO = 3
 
 MIN_MINE_PROBABILITY = 0.05
 INVALID_PROBABILITY = 2
 
-TEXT_COLOR = (255, 255, 255)
-TEXT_TOP_MARGIN = 5
+TEXT_COLOR = colors.WHITE
+TEXT_MARGIN = 5
+
+FONT = "Courier New"
 
 class Board():
     def __init__(self, tileSize, boardSize, screenSize):
@@ -29,11 +36,15 @@ class Board():
         self.screenSize = screenSize
         self.tileBoardSize = boardSize
         self.tileBoard = pygame.Surface(self.tileBoardSize)
+        self.tileBoardOverlay = pygame.Surface(self.tileBoardSize)
+        self.tileBoardOverlay.set_alpha(64, pygame.RLEACCEL)
+        self.tileBoardOverlay.fill(colors.BLACK)
 
         self.tileGroup = pygame.sprite.Group()
         self.mineGroup = pygame.sprite.Group()
        
         self.winText = self.monospaceFont.render("Congratulations, you won!", True, TEXT_COLOR)
+        self.howToPlayText = self.monospaceFont.render("Left click to reveal. Right click to flag.", True, TEXT_COLOR)
         self.playAgainText = self.monospaceFont.render("Click anywhere on the board to start.", True, TEXT_COLOR)
 
         self.difficulty = DIFFICULTY_EASY
@@ -42,15 +53,21 @@ class Board():
         self.tileGroup.draw(self.tileBoard)
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
-
-        if not self.playable:
-            screen.blit(self.playAgainText, ((self.screenSize[0] / 2) - (self.playAgainText.get_width() / 2), (self.playAgainText.get_height() + (TEXT_TOP_MARGIN * 2))))
+        
+        difficultyText = self.monospaceFont.render("DIFFICULTY: %s" % DIFFICULTY_STRINGS[self.difficulty], True, TEXT_COLOR)
+        screen.blit(difficultyText, ((self.screenSize[0] / 2) - (difficultyText.get_width() / 2), self.screenSize[1] - (difficultyText.get_height() + TEXT_MARGIN)))
 
         if self.won:
-            screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_TOP_MARGIN))
+            screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_MARGIN))
         else:
             flagsLeftText = self.monospaceFont.render("Flags left: %s" % (self.flaggable), True, TEXT_COLOR)
-            screen.blit(flagsLeftText, ((self.screenSize[0] / 2) - (flagsLeftText.get_width() / 2), TEXT_TOP_MARGIN))
+            screen.blit(flagsLeftText, ((self.screenSize[0] / 2) - (flagsLeftText.get_width() / 2), TEXT_MARGIN))
+
+        if self.playable:
+            screen.blit(self.howToPlayText, ((self.screenSize[0] / 2) - (self.howToPlayText.get_width() / 2), (self.howToPlayText.get_height() + (TEXT_MARGIN * 2))))
+        else:
+            screen.blit(self.tileBoardOverlay, self.getTileBoardRelativeCenter())
+            screen.blit(self.playAgainText, ((self.screenSize[0] / 2) - (self.playAgainText.get_width() / 2), (self.playAgainText.get_height() + (TEXT_MARGIN * 2))))
 
     def fillBoard(self, startPos):
         self.won = False
@@ -64,9 +81,7 @@ class Board():
 
         w, h = self.getScaledBounds()
         self.totalTiles = w * h
-        self.flaggable = int(w * h * self.difficulty)
-        print("total mines:", self.flaggable)
-        print("total tiles:", self.totalTiles)
+        self.flaggable = int(w * h * DIFFICULTIES[self.difficulty])
 
         self.tileMatrix = [[object for e in range(h)] for e in range(w)]
         mineMatrix = [[random.random() for e in range(h)] for e in range(w)]
@@ -104,10 +119,10 @@ class Board():
                 tile = object
 
                 if board[x][y] == tiles.MINE:
-                    tile = tiles.MineTile(pos=(x, y), font=self.monospaceFont)
+                    tile = tiles.MineTile(pos=(x, y), font=self.monospaceFont, color=colors.WHITE)
                     self.mineGroup.add(tile)
                 else:
-                    tile = tiles.NumberTile(value=board[x][y], pos=(x, y), font=self.monospaceFont)
+                    tile = tiles.NumberTile(value=board[x][y], pos=(x, y), font=self.monospaceFont, color=colors.WHITE)
                     self.tileGroup.add(tile)
 
                 self.tileMatrix[x][y] = tile
@@ -118,7 +133,10 @@ class Board():
         for x1 in range(x - 1 if x - 1 > 0 else 0, x + 2 if x + 2 < w else w):
             for y1 in range(y - 1 if y - 1 > 0 else 0, y + 2 if y + 2 < h else h):
                 if self.tileMatrix[x1][y1].isUncovered() == False:
-                    self.setUncovered(x1, y1)
+                    self.uncoverTile(x1, y1)
+
+                    if self.tileMatrix[x1][y1].getValue() == 0:
+                        self.updateSurrounding(x1, y1, w, h)
     
     def revealMines(self):
         self.playable = False
@@ -128,9 +146,12 @@ class Board():
                 if self.tileMatrix[x][y].getValue() == 9:
                     self.tileMatrix[x][y].setUncovered(True)
 
-    def setUncovered(self, x, y):
+    def uncoverTile(self, x, y):
         self.countUncoveredTiles = self.countUncoveredTiles + 1
         self.tileMatrix[x][y].setUncovered(True)
+
+    def uncover(self, x, y):
+        self.uncoverTile(x,y)
         
         if self.tileMatrix[x][y].getValue() == 9:
             self.revealMines()
@@ -174,7 +195,7 @@ class Board():
 
     def setTileSize(self, tileSize):
         self.tileSize = tileSize
-        self.monospaceFont = pygame.font.SysFont("Consolas", int(self.tileSize * .9))
+        self.monospaceFont = pygame.font.SysFont(FONT, int(self.tileSize * .9))
 
     def getScaledBounds(self):
         w = int(self.tileBoard.get_width() / self.tileSize)
