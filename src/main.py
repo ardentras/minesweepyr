@@ -17,8 +17,8 @@ def processClick(event, gameBoard):
     y = int(y - bch)
 
     boardRect = gameBoard.getTileBoard().get_rect()
-    difficultyLeftButtonRect = gameBoard.getDifficultyLeftButton().get_rect()
-    difficultyRightButtonRect = gameBoard.getDifficultyRightButton().get_rect()
+    leftButtonRect = gameBoard.getLeftButton().get_rect()
+    rightButtonRect = gameBoard.getRightButton().get_rect()
     if boardRect.collidepoint((x, y)):
         scaledX = int(x / gameBoard.getTileSize())
         scaledY = int(y / gameBoard.getTileSize())
@@ -32,18 +32,21 @@ def processClick(event, gameBoard):
         elif pressed3:
             if not gameBoard.getTile(scaledX, scaledY).isUncovered():
                 gameBoard.flipFlagged(scaledX, scaledY)
-    elif difficultyLeftButtonRect.move(gameBoard.getDifficultyLeftButtonPosition()).collidepoint(event.pos):
-        print("hit")
+    elif leftButtonRect.move(gameBoard.getDifficultyLeftButtonPosition()).collidepoint(event.pos):
         gameBoard.difficultyRotateLeft()
-    elif difficultyRightButtonRect.move(gameBoard.getDifficultyRightButtonPosition()).collidepoint(event.pos):
+    elif rightButtonRect.move(gameBoard.getDifficultyRightButtonPosition()).collidepoint(event.pos):
         gameBoard.difficultyRotateRight()
+    elif leftButtonRect.move(gameBoard.getBoardSizeLeftButtonPosition()).collidepoint(event.pos):
+        gameBoard.boardSizeRotateLeft()
+    elif rightButtonRect.move(gameBoard.getBoardSizeRightButtonPosition()).collidepoint(event.pos):
+        gameBoard.boardSizeRotateRight()
 
 pygame.init()
 
 pygame.display.set_caption("Minesweepyr")
 screen = pygame.display.set_mode((640, 480))
 
-gameBoard = board.Board(16, (128 * 3, 128 * 3), screen.get_size())
+gameBoard = board.Board(16, screen.get_size())
 
 running = True
 while running:
