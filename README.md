@@ -21,5 +21,5 @@ A [pygame](https://pygame.org) implementation of minesweeper
 
 ```bash
 $ pip install -r requirements.txt
-$ python main.py
+$ python src/main.py
 ```
