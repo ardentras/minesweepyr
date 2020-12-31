@@ -1,7 +1,7 @@
 ###########################################################
 # Filename: tiles.py
 # Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
-# Last Modified: 12/29/2020
+# Last Modified: 12/31/2020
 #
 # tile classes for numbers and mines
 #
@@ -39,7 +39,7 @@ class Tile(pygame.sprite.Sprite):
     def redraw(self):
         return
 
-    def draw(self, value, bkg=None, border=colors.LTGRAY):
+    def draw(self, value, bkg=None, border=colors.LGRAY):
         if bkg == None:
             bkg = self.colorDimmed
             
