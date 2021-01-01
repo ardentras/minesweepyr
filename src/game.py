@@ -8,10 +8,12 @@
 
 import pygame
 import board, colors
+import json
 from collections import deque
 
 FONT = "Courier New"
 
+SETTINGS_FILENAME = 'settings.json'
 TEXT_COLOR = colors.WHITE
 TEXT_MARGIN = 5
 
@@ -28,17 +30,18 @@ class Difficulty():
 
 class Game():
     def __init__(self, tileSize, screenSize):
+        settingsText = ""
+        with open(SETTINGS_FILENAME, "r") as inFile:
+            settingsText = inFile.read()
+        settings = json.loads(settingsText)
+
         self.DIFFICULTIES = deque()
-        self.DIFFICULTIES.append(Difficulty("EASY", 0.05))
-        self.DIFFICULTIES.append(Difficulty("MEDIUM", 0.1))
-        self.DIFFICULTIES.append(Difficulty("HARD", 0.2))
-        self.DIFFICULTIES.append(Difficulty("PRO", 0.35))
+        for difficulty in settings['difficulties']:
+            self.DIFFICULTIES.append(Difficulty(difficulty['name'], difficulty['modifier']))
 
         self.BOARD_SIZES = deque()
-        self.BOARD_SIZES.append((128, 128 * 3 / 2))
-        self.BOARD_SIZES.append((128 * 3 / 2, 128 * 2))
-        self.BOARD_SIZES.append((128 * 2, 128 * 3))
-        self.BOARD_SIZES.append((128 * 3, 128 * 3))
+        for boardSize in settings['boardSizes']:
+            self.BOARD_SIZES.append((boardSize[0], boardSize[1]))
 
         self.screenSize = screenSize
         self.gameBoard = board.Board(tileSize, screenSize, self.BOARD_SIZES.popleft(), self.DIFFICULTIES.popleft())

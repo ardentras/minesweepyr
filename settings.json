@@ -1,0 +1,27 @@
+{
+    "difficulties": [
+        {
+            "name": "EASY",
+            "modifier": 0.05
+        },
+        {
+            "name": "MEDIUM",
+            "modifier": 0.1
+        },
+        {
+            "name": "HARD",
+            "modifier": 0.2
+        },
+        {
+            "name": "EXTREME",
+            "modifier": 0.35
+        }
+    ],
+    "boardSizes": [
+        [128, 192],
+        [192, 256],
+        [256, 320],
+        [320, 384],
+        [384, 384]
+    ]
+}
