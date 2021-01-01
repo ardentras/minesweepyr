@@ -1,7 +1,7 @@
 ###########################################################
 # Filename: board.py
 # Author: Shaun Rasmusen <shaunrasmusen@gmail.com>
-# Last Modified: 12/30/2020
+# Last Modified: 12/31/2020
 #
 # Everything drawn to the screen that's related to the
 # game board and game actions
@@ -10,69 +10,26 @@
 import pygame
 import colors, tiles
 import random
-from collections import deque
-
-class Difficulty():
-    def __init__(self, name, modifier):
-        self.name = name
-        self.modifier = modifier
-    
-    def getName(self):
-        return self.name
-    
-    def getModifier(self):
-        return self.modifier
 
 MIN_MINE_PROBABILITY = 0.05
 INVALID_PROBABILITY = 2
 
-TEXT_COLOR = colors.WHITE
-TEXT_MARGIN = 5
-
 FONT = "Courier New"
 
 class Board():
-    def __init__(self, tileSize, screenSize):
+    def __init__(self, tileSize, screenSize, tileBoardSize, difficulty):
         self.playable = False
         self.won = False
-
-        self.DIFFICULTIES = deque()
-        self.DIFFICULTIES.append(Difficulty("EASY", 0.05))
-        self.DIFFICULTIES.append(Difficulty("MEDIUM", 0.1))
-        self.DIFFICULTIES.append(Difficulty("HARD", 0.2))
-        self.DIFFICULTIES.append(Difficulty("PRO", 0.35))
-
-        self.BOARD_SIZES = deque()
-        self.BOARD_SIZES.append((128, 128 * 3 / 2))
-        self.BOARD_SIZES.append((128 * 3 / 2, 128 * 2))
-        self.BOARD_SIZES.append((128 * 2, 128 * 3))
-        self.BOARD_SIZES.append((128 * 3, 128 * 3))
 
         self.tileGroup = pygame.sprite.Group()
         self.mineGroup = pygame.sprite.Group()
 
         self.flaggable = 0
         self.setTileSize(tileSize)
+        self.tileBoardSize = tileBoardSize
         self.screenSize = screenSize
-        self.tileBoardSize = self.BOARD_SIZES.popleft()
-        self.difficulty = self.DIFFICULTIES.popleft()
-       
-        self.winText = self.monospaceFont.render("Congratulations, you won!", True, TEXT_COLOR)
-        self.howToPlayText = self.monospaceFont.render("Left click to reveal. Right click to flag.", True, TEXT_COLOR)
-        self.playAgainText = self.monospaceFont.render("Click anywhere on the board to start.", True, TEXT_COLOR)
-        self.difficultyText = self.monospaceFont.render("DIFFICULTY", True, TEXT_COLOR)
-        self.boardSizeText = self.monospaceFont.render("BOARD SIZE", True, TEXT_COLOR)
 
-        self.leftButton = self.monospaceFont.render("<", True, TEXT_COLOR)
-        self.rightButton = self.monospaceFont.render(">", True, TEXT_COLOR)
-        
-        self.difficultyTextPosition = ((self.screenSize[0] / 2) - (self.difficultyText.get_width() / 2), self.screenSize[1] - ((self.difficultyText.get_height() + TEXT_MARGIN) * 2))
-        self.difficultyLeftButtonPosition = (self.difficultyTextPosition[0] - self.leftButton.get_width() - TEXT_MARGIN, self.difficultyTextPosition[1])
-        self.difficultyRightButtonPosition = (self.difficultyTextPosition[0] + self.difficultyText.get_width() + TEXT_MARGIN, self.difficultyTextPosition[1])
-
-        self.boardSizeRightButtonPosition = (self.difficultyLeftButtonPosition[0] - self.rightButton.get_width() - (TEXT_MARGIN * 3), self.difficultyTextPosition[1])
-        self.boardSizeTextPosition = (self.boardSizeRightButtonPosition[0] - self.boardSizeText.get_width() - TEXT_MARGIN, self.boardSizeRightButtonPosition[1])
-        self.boardSizeLeftButtonPosition = (self.boardSizeTextPosition[0] - self.leftButton.get_width() - TEXT_MARGIN, self.boardSizeTextPosition[1])
+        self.difficulty = difficulty
 
         self.updateTileBoard()
         
@@ -81,29 +38,30 @@ class Board():
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
 
-        difficulty = self.monospaceFont.render(self.difficulty.getName(), True, TEXT_COLOR)
-        screen.blit(difficulty, ((self.screenSize[0] / 2) - (difficulty.get_width() / 2), self.screenSize[1] - (difficulty.get_height() + TEXT_MARGIN)))
-        screen.blit(self.leftButton, self.difficultyLeftButtonPosition)
-        screen.blit(self.difficultyText, self.difficultyTextPosition)
-        screen.blit(self.rightButton, self.difficultyRightButtonPosition)
-
-        tileBoardSize = self.monospaceFont.render("%d x %d" % self.tileBoardSize, True, TEXT_COLOR)
-        screen.blit(self.leftButton, self.boardSizeLeftButtonPosition)
-        screen.blit(self.boardSizeText, self.boardSizeTextPosition)
-        screen.blit(self.rightButton, self.boardSizeRightButtonPosition)
-        screen.blit(tileBoardSize, ((self.boardSizeTextPosition[0] + (self.boardSizeText.get_width() / 2)) - (tileBoardSize.get_width() / 2), self.boardSizeTextPosition[1] + TEXT_MARGIN + tileBoardSize.get_height()))
-
-        if self.won:
-            screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_MARGIN))
-        else:
-            flagsLeftText = self.monospaceFont.render("Flags left: %s" % (self.flaggable), True, TEXT_COLOR)
-            screen.blit(flagsLeftText, ((self.screenSize[0] / 2) - (flagsLeftText.get_width() / 2), TEXT_MARGIN))
-
-        if self.playable:
-            screen.blit(self.howToPlayText, ((self.screenSize[0] / 2) - (self.howToPlayText.get_width() / 2), (self.howToPlayText.get_height() + (TEXT_MARGIN * 2))))
-        else:
+        if not self.playable:
             screen.blit(self.tileBoardOverlay, self.getTileBoardRelativeCenter())
-            screen.blit(self.playAgainText, ((self.screenSize[0] / 2) - (self.playAgainText.get_width() / 2), (self.playAgainText.get_height() + (TEXT_MARGIN * 2))))
+
+    def processClick(self, event):
+        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+        x,y = event.pos
+        bcw, bch = self.getTileBoardRelativeCenter()
+        x = int(x - bcw)
+        y = int(y - bch)
+
+        boardRect = self.getTileBoard().get_rect()
+        if boardRect.collidepoint((x, y)):
+            scaledX = int(x / self.getTileSize())
+            scaledY = int(y / self.getTileSize())
+
+            if not self.playable:
+                self.fillBoard((scaledX, scaledY))
+
+            if pressed1:
+                if not self.getTile(scaledX, scaledY).isFlagged():
+                    self.uncover(scaledX, scaledY)
+            elif pressed3:
+                if not self.getTile(scaledX, scaledY).isUncovered():
+                    self.flipFlagged(scaledX, scaledY)
 
     def fillBoard(self, startPos):
         self.resetGame()
@@ -212,6 +170,13 @@ class Board():
             
             if allFlagged:
                 self.win()
+    
+    def updateTileBoard(self):
+        self.resetGame()
+        self.tileBoard = pygame.Surface(self.tileBoardSize)
+        self.tileBoardOverlay = pygame.Surface(self.tileBoardSize)
+        self.tileBoardOverlay.set_alpha(64, pygame.RLEACCEL)
+        self.tileBoardOverlay.fill(colors.BLACK)
 
     def win(self):
         self.playable = False
@@ -248,60 +213,26 @@ class Board():
         if self.tileBoard.get_height() % self.tileSize != 0: h = h - 1
 
         return (w,h)
+
+    def getFlagsLeft(self):
+        return self.flaggable
+
+    def hasWon(self):
+        return self.won
     
     def isPlayable(self):
         return self.playable
 
-    def getLeftButton(self):
-        return self.leftButton
-
-    def getRightButton(self):
-        return self.rightButton
-
-    def getDifficultyTextPosition(self):
-        return self.difficultyTextPosition
-
-    def getDifficultyLeftButtonPosition(self):
-        return self.difficultyLeftButtonPosition
-
-    def getDifficultyRightButtonPosition(self):
-        return self.difficultyRightButtonPosition
-
-    def difficultyRotateLeft(self):
-        self.DIFFICULTIES.appendleft(self.difficulty)
-        self.difficulty = self.DIFFICULTIES.pop()
-        self.resetGame()
-
-    def difficultyRotateRight(self):
-        self.DIFFICULTIES.append(self.difficulty)
-        self.difficulty = self.DIFFICULTIES.popleft()
-        self.resetGame()
-
-    def getBoardSize(self):
+    def getTileBoardSize(self):
         return self.tileBoardSize
 
-    def getBoardSizeTextPosition(self):
-        return self.boardSizeTextPosition
-
-    def getBoardSizeLeftButtonPosition(self):
-        return self.boardSizeLeftButtonPosition
-
-    def getBoardSizeRightButtonPosition(self):
-        return self.boardSizeRightButtonPosition
-
-    def boardSizeRotateLeft(self):
-        self.BOARD_SIZES.appendleft(self.tileBoardSize)
-        self.tileBoardSize = self.BOARD_SIZES.pop()
+    def setTileBoardSize(self, tbs):
+        self.tileBoardSize = tbs
         self.updateTileBoard()
 
-    def boardSizeRotateRight(self):
-        self.BOARD_SIZES.append(self.tileBoardSize)
-        self.tileBoardSize = self.BOARD_SIZES.popleft()
-        self.updateTileBoard()
+    def getDifficulty(self):
+        return self.difficulty
     
-    def updateTileBoard(self):
+    def setDifficulty(self, d):
+        self.difficulty = d
         self.resetGame()
-        self.tileBoard = pygame.Surface(self.tileBoardSize)
-        self.tileBoardOverlay = pygame.Surface(self.tileBoardSize)
-        self.tileBoardOverlay.set_alpha(64, pygame.RLEACCEL)
-        self.tileBoardOverlay.fill(colors.BLACK)
