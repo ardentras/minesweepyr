@@ -78,8 +78,63 @@ class Difficulty():
     def getModifier(self):
         return self.modifier
 
+class MenuOption():
+    def __init__(self, name, options, theme, pos):
+        self.theme = theme
+
+        self.centerPosition = pos
+        self.options = options
+        self.currentOption = self.options.popleft()
+
+        self.text = self.theme.textFont.render(name, True, self.theme.textColor)
+        self.leftButton = self.theme.textFont.render("<", True, self.theme.textColor)
+        self.rightButton = self.theme.textFont.render(">", True, self.theme.textColor)
+
+        self.textPosition = (self.centerPosition[0] - (self.text.get_width() / 2), self.centerPosition[1])
+        self.leftButtonPosition = (self.textPosition[0] - self.leftButton.get_width() - TEXT_MARGIN, self.textPosition[1])
+        self.rightButtonPosition = (self.textPosition[0] + self.text.get_width() + TEXT_MARGIN, self.textPosition[1])
+
+    def draw(self, screen, currentOptionFormat):
+        optionText = self.theme.textFont.render(currentOptionFormat(self.currentOption), True, self.theme.textColor)
+        optionTextPosition = (self.centerPosition[0] - (optionText.get_width() / 2), self.centerPosition[1] + optionText.get_height() + TEXT_MARGIN)
+
+        screen.blit(self.leftButton, self.leftButtonPosition)
+        screen.blit(self.text, self.textPosition)
+        screen.blit(self.rightButton, self.rightButtonPosition)
+        screen.blit(optionText, optionTextPosition)
+
+    def processClick(self, event):
+        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
+
+        if pressed1:
+            leftButtonRect = self.leftButton.get_rect()
+            rightButtonRect = self.rightButton.get_rect()
+            if leftButtonRect.move(self.leftButtonPosition).collidepoint(event.pos):
+                self.rotateLeft()
+            elif rightButtonRect.move(self.rightButtonPosition).collidepoint(event.pos):
+                self.rotateRight()
+            else:
+                return False
+            
+            return True
+
+        return False
+
+    def rotateLeft(self):
+        self.options.appendleft(self.currentOption)
+        self.currentOption = self.options.pop()
+
+    def rotateRight(self):
+        self.options.append(self.currentOption)
+        self.currentOption = self.options.popleft()
+
+    def getCurrentOption(self):
+        return self.currentOption
+
 class Game():
     def __init__(self, tileSize, screenSize):
+        self.screenSize = screenSize
+        
         settingsText = ""
         with open(SETTINGS_FILENAME, "r") as inFile:
             settingsText = inFile.read()
@@ -93,48 +148,31 @@ class Game():
                 self.THEMES.append(Theme(theme))
         self.theme = self.THEMES.popleft()
         
-        self.DIFFICULTIES = deque()
+        DIFFICULTIES = deque()
         for difficulty in settings['difficulties']:
-            self.DIFFICULTIES.append(Difficulty(difficulty['name'], difficulty['modifier']))
+            DIFFICULTIES.append(Difficulty(difficulty['name'], difficulty['modifier']))
 
-        self.BOARD_SIZES = deque()
+        BOARD_SIZES = deque()
         for boardSize in settings['boardSizes']:
-            self.BOARD_SIZES.append((boardSize[0], boardSize[1]))
+            BOARD_SIZES.append((boardSize[0], boardSize[1]))
 
-        self.screenSize = screenSize
-        self.gameBoard = board.Board(tileSize, screenSize, self.BOARD_SIZES.popleft(), self.DIFFICULTIES.popleft(), self.theme)
+        difficultyOptionPosition = (self.screenSize[0] / 2, self.screenSize[1] - ((self.theme.textFont.get_height() + TEXT_MARGIN) * 2))
+        self.difficultyOption = MenuOption("DIFFICULTY", DIFFICULTIES, self.theme, difficultyOptionPosition)
+
+        boardSizeOptionPosition = (self.screenSize[0] / 4, self.screenSize[1] - ((self.theme.textFont.get_height() + TEXT_MARGIN) * 2))
+        self.boardSizeOption = MenuOption("BOARD SIZE", BOARD_SIZES, self.theme, boardSizeOptionPosition)
+
+        self.gameBoard = board.Board(tileSize, screenSize, self.boardSizeOption.getCurrentOption(), self.difficultyOption.getCurrentOption(), self.theme)
         
         self.winText = self.theme.textFont.render("Congratulations, you won!", True, self.theme.textColor)
         self.howToPlayText = self.theme.textFont.render("Left click to reveal. Right click to flag.", True, self.theme.textColor)
         self.playAgainText = self.theme.textFont.render("Click anywhere on the board to start.", True, self.theme.textColor)
-        self.difficultyText = self.theme.textFont.render("DIFFICULTY", True, self.theme.textColor)
-        self.boardSizeText = self.theme.textFont.render("BOARD SIZE", True, self.theme.textColor)
-
-        self.leftButton = self.theme.textFont.render("<", True, self.theme.textColor)
-        self.rightButton = self.theme.textFont.render(">", True, self.theme.textColor)
-        
-        self.difficultyTextPosition = ((self.screenSize[0] / 2) - (self.difficultyText.get_width() / 2), self.screenSize[1] - ((self.difficultyText.get_height() + TEXT_MARGIN) * 2))
-        self.difficultyLeftButtonPosition = (self.difficultyTextPosition[0] - self.leftButton.get_width() - TEXT_MARGIN, self.difficultyTextPosition[1])
-        self.difficultyRightButtonPosition = (self.difficultyTextPosition[0] + self.difficultyText.get_width() + TEXT_MARGIN, self.difficultyTextPosition[1])
-
-        self.boardSizeRightButtonPosition = (self.difficultyLeftButtonPosition[0] - self.rightButton.get_width() - (TEXT_MARGIN * 3), self.difficultyTextPosition[1])
-        self.boardSizeTextPosition = (self.boardSizeRightButtonPosition[0] - self.boardSizeText.get_width() - TEXT_MARGIN, self.boardSizeRightButtonPosition[1])
-        self.boardSizeLeftButtonPosition = (self.boardSizeTextPosition[0] - self.leftButton.get_width() - TEXT_MARGIN, self.boardSizeTextPosition[1])
 
     def draw(self, screen):
         screen.fill(self.theme.backgroundColor)
-        
-        difficulty = self.theme.textFont.render(self.gameBoard.getDifficulty().getName(), True, self.theme.textColor)
-        screen.blit(difficulty, ((self.screenSize[0] / 2) - (difficulty.get_width() / 2), self.screenSize[1] - (difficulty.get_height() + TEXT_MARGIN)))
-        screen.blit(self.leftButton, self.difficultyLeftButtonPosition)
-        screen.blit(self.difficultyText, self.difficultyTextPosition)
-        screen.blit(self.rightButton, self.difficultyRightButtonPosition)
 
-        tileBoardSize = self.theme.textFont.render("%d x %d" % self.gameBoard.getTileBoardSize(), True, self.theme.textColor)
-        screen.blit(self.leftButton, self.boardSizeLeftButtonPosition)
-        screen.blit(self.boardSizeText, self.boardSizeTextPosition)
-        screen.blit(self.rightButton, self.boardSizeRightButtonPosition)
-        screen.blit(tileBoardSize, ((self.boardSizeTextPosition[0] + (self.boardSizeText.get_width() / 2)) - (tileBoardSize.get_width() / 2), self.boardSizeTextPosition[1] + TEXT_MARGIN + tileBoardSize.get_height()))
+        self.difficultyOption.draw(screen, (lambda e: e.getName()))
+        self.boardSizeOption.draw(screen, (lambda e: "%d x %d" % e))
 
         if self.gameBoard.hasWon():
             screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_MARGIN))
@@ -150,64 +188,11 @@ class Game():
         self.gameBoard.draw(screen)
 
     def processClick(self, event):
-        pressed1, pressed2, pressed3 = pygame.mouse.get_pressed()
-
-        if pressed1:
-            leftButtonRect = self.getLeftButton().get_rect()
-            rightButtonRect = self.getRightButton().get_rect()
-            if leftButtonRect.move(self.getDifficultyLeftButtonPosition()).collidepoint(event.pos):
-                self.difficultyRotateLeft()
-            elif rightButtonRect.move(self.getDifficultyRightButtonPosition()).collidepoint(event.pos):
-                self.difficultyRotateRight()
-            elif leftButtonRect.move(self.getBoardSizeLeftButtonPosition()).collidepoint(event.pos):
-                self.boardSizeRotateLeft()
-            elif rightButtonRect.move(self.getBoardSizeRightButtonPosition()).collidepoint(event.pos):
-                self.boardSizeRotateRight()
-
+        if self.difficultyOption.processClick(event):
+            self.gameBoard.setDifficulty(self.difficultyOption.getCurrentOption())
+        if self.boardSizeOption.processClick(event):
+            self.gameBoard.setTileBoardSize(self.boardSizeOption.getCurrentOption())
         self.gameBoard.processClick(event)
 
     def getGameBoard(self):
         return self.gameBoard
-
-    def getLeftButton(self):
-        return self.leftButton
-
-    def getRightButton(self):
-        return self.rightButton
-
-    def getDifficultyTextPosition(self):
-        return self.difficultyTextPosition
-
-    def getDifficultyLeftButtonPosition(self):
-        return self.difficultyLeftButtonPosition
-
-    def getDifficultyRightButtonPosition(self):
-        return self.difficultyRightButtonPosition
-
-    def difficultyRotateLeft(self):
-        self.DIFFICULTIES.appendleft(self.gameBoard.getDifficulty())
-        self.gameBoard.setDifficulty(self.DIFFICULTIES.pop())
-
-    def difficultyRotateRight(self):
-        self.DIFFICULTIES.append(self.gameBoard.getDifficulty())
-        self.gameBoard.setDifficulty(self.DIFFICULTIES.popleft())
-
-    def getBoardSize(self):
-        return self.tileBoardSize
-
-    def getBoardSizeTextPosition(self):
-        return self.boardSizeTextPosition
-
-    def getBoardSizeLeftButtonPosition(self):
-        return self.boardSizeLeftButtonPosition
-
-    def getBoardSizeRightButtonPosition(self):
-        return self.boardSizeRightButtonPosition
-
-    def boardSizeRotateLeft(self):
-        self.BOARD_SIZES.appendleft(self.gameBoard.getTileBoardSize())
-        self.gameBoard.setTileBoardSize(self.BOARD_SIZES.pop())
-
-    def boardSizeRotateRight(self):
-        self.BOARD_SIZES.append(self.gameBoard.getTileBoardSize())
-        self.gameBoard.setTileBoardSize(self.BOARD_SIZES.popleft())
