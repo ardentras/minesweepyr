@@ -11,22 +11,18 @@ import colors
 
 pygame.font.init()
 
-DEFAULT_FONT = pygame.font.SysFont("Courier New", 16, True)
 MINE = 9
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, value = 0, pos = (0, 0), color = colors.WHITE, size = 16, font=DEFAULT_FONT):
+    def __init__(self, value, pos, theme, size = 16):
         pygame.sprite.Sprite.__init__(self)
 
         self.borderScale = .95
         self.image = pygame.Surface((size, size))
         self.tile = pygame.Surface((size * self.borderScale, size * self.borderScale))
 
-        self.font = font
         self.size = size
-        self.color = color
-        self.colorInverted = (255-self.color[0],255-self.color[1],255-self.color[2])
-        self.colorDimmed = (abs(self.color[0] - 32),abs(self.color[1] - 32),abs(self.color[2] - 32))
+        self.theme = theme
         
         self.uncovered = False
         self.flagged = False
@@ -39,19 +35,16 @@ class Tile(pygame.sprite.Sprite):
     def redraw(self):
         return
 
-    def draw(self, value, bkg=None, border=colors.LGRAY):
-        if bkg == None:
-            bkg = self.colorDimmed
-            
-        number = self.font.render(str(value), True, self.colorInverted)
+    def draw(self, value, color):
+        number = self.theme.tileFont.render(str(value), True, self.theme.tileColorInverted)
 
         numMidwide = (self.size / 2) - (number.get_width() / 2)
         numMidhigh = (self.size / 2) - (number.get_height() / 2)
         tileMidwide = (self.size / 2) - ((self.size * self.borderScale) / 2)
         tileMidhigh = (self.size / 2) - ((self.size * self.borderScale) / 2)
 
-        self.tile.fill(bkg)
-        self.image.fill(border)
+        self.tile.fill(color)
+        self.image.fill(self.theme.tileBorderColor)
         
         self.image.blit(self.tile, (tileMidwide,tileMidhigh))
         self.image.blit(number, (numMidwide,numMidhigh))
@@ -76,28 +69,28 @@ class Tile(pygame.sprite.Sprite):
         return int(self.value) if self.value != 'X' else 9
 
 class NumberTile(Tile):
-    def __init__(self, value = 0, pos = (0, 0), color = colors.WHITE, size = 16, font=DEFAULT_FONT):
-        super().__init__(value, pos, color, size, font)
+    def __init__(self, value, pos, theme, size = 16):
+        super().__init__(value, pos, theme, size)
 
     def redraw(self):
         if self.uncovered:
             if self.value > 0:
-                self.draw(self.value)
+                self.draw(self.value, self.theme.tileColor)
             else:
-                self.image.fill(self.colorDimmed)
+                self.image.fill(self.theme.tileColor)
         elif self.flagged:
-            self.draw("F", self.color)
+            self.draw("F", self.theme.tileColor)
         else:
-            self.draw("", self.color)
+            self.draw("", self.theme.tileColor)
 
 class MineTile(Tile):
-    def __init__(self, pos = (0, 0), color = colors.WHITE, size = 16, font=DEFAULT_FONT):
-        super().__init__(MINE, pos, color, size, font)
+    def __init__(self, pos, theme, size = 16):
+        super().__init__(MINE, pos, theme, size)
 
     def redraw(self):
         if self.uncovered:
-            self.draw("X", (219, 55, 0))
+            self.draw("X", self.theme.mineColor)
         elif self.flagged:
-            self.draw("F", self.color)
+            self.draw("F", self.theme.tileColor)
         else:
-            self.draw("", self.color)
+            self.draw("", self.theme.tileColor)

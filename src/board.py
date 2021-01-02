@@ -17,7 +17,7 @@ INVALID_PROBABILITY = 2
 FONT = "Courier New"
 
 class Board():
-    def __init__(self, tileSize, screenSize, tileBoardSize, difficulty):
+    def __init__(self, tileSize, screenSize, tileBoardSize, difficulty, theme):
         self.playable = False
         self.won = False
 
@@ -30,6 +30,8 @@ class Board():
         self.screenSize = screenSize
 
         self.difficulty = difficulty
+        
+        self.theme = theme
 
         self.updateTileBoard()
         
@@ -112,10 +114,10 @@ class Board():
                 tile = object
 
                 if board[x][y] == tiles.MINE:
-                    tile = tiles.MineTile(pos=(x, y), font=self.monospaceFont, color=colors.WHITE)
+                    tile = tiles.MineTile(pos=(x, y), theme=self.theme)
                     self.mineGroup.add(tile)
                 else:
-                    tile = tiles.NumberTile(value=board[x][y], pos=(x, y), font=self.monospaceFont, color=colors.WHITE)
+                    tile = tiles.NumberTile(value=board[x][y], pos=(x, y), theme=self.theme)
                     self.tileGroup.add(tile)
 
                 self.tileMatrix[x][y] = tile
@@ -174,9 +176,10 @@ class Board():
     def updateTileBoard(self):
         self.resetGame()
         self.tileBoard = pygame.Surface(self.tileBoardSize)
+        self.tileBoard.fill(self.theme.boardColor)
         self.tileBoardOverlay = pygame.Surface(self.tileBoardSize)
         self.tileBoardOverlay.set_alpha(64, pygame.RLEACCEL)
-        self.tileBoardOverlay.fill(colors.BLACK)
+        self.tileBoardOverlay.fill(self.theme.boardColor)
 
     def win(self):
         self.playable = False

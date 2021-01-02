@@ -25,7 +25,6 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             game.processClick(event)
                 
-    screen.fill(colors.GRAY)
     game.draw(screen)
     
     pygame.display.flip()

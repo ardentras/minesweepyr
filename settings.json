@@ -23,5 +23,27 @@
         [256, 320],
         [320, 384],
         [384, 384]
+    ],
+    "themes": [
+        {
+            "name": "something new",
+            "textFont": {
+                "name": "Courier New",
+                "size": 14
+            },
+            "tileFont": {
+                "name": "Courier New",
+                "size": 16
+            },
+            "colors": {
+                "text": "ffffff",
+                "background": "888888",
+                "board": "000000",
+                "tile": "ffffff",
+                "tileCover": "dfdfdf",
+                "tileBorder": "dfdfdf", 
+                "mine": "cc3b00"
+            }
+        }
     ]
 }
