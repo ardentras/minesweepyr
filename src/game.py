@@ -26,7 +26,6 @@ class Theme():
 
         self.textColor = c.WHITE
         self.backgroundColor = c.GRAY
-        self.boardColor = c.BLACK
         self.tileColor = c.WHITE
         self.tileCoverColor = c.LGRAY
         self.tileBorderColor = c.LGRAY
@@ -59,7 +58,7 @@ class Theme():
                 if "mine" in colors:
                     self.mineColor = self.hexStringToRGB(colors["mine"])
 
-        self.tileColorInverted = (255-self.tileColor[0],255-self.tileColor[1],255-self.tileColor[2])
+        self.boardColor = (abs(self.backgroundColor[0]-16),abs(self.backgroundColor[1]-16),abs(self.backgroundColor[2]-16))
 
     def processFont(self, f):
         return pygame.font.SysFont(f["name"], f["size"] if "size" in f else 16, f["bold"] if "bold" in f else False)

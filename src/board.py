@@ -147,8 +147,9 @@ class Board():
                     self.tileMatrix[x][y].setUncovered(True)
 
     def uncoverTile(self, x, y):
-        self.countUncoveredTiles = self.countUncoveredTiles + 1
-        self.tileMatrix[x][y].setUncovered(True)
+        if not self.tileMatrix[x][y].isUncovered():
+            self.countUncoveredTiles = self.countUncoveredTiles + 1
+            self.tileMatrix[x][y].setUncovered(True)
 
     def uncover(self, x, y):
         self.uncoverTile(x,y)

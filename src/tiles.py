@@ -36,7 +36,7 @@ class Tile(pygame.sprite.Sprite):
         return
 
     def draw(self, value, color):
-        number = self.theme.tileFont.render(str(value), True, self.theme.tileColorInverted)
+        number = self.theme.tileFont.render(str(value), True, (255-color[0],255-color[1],255-color[2]))
 
         numMidwide = (self.size / 2) - (number.get_width() / 2)
         numMidhigh = (self.size / 2) - (number.get_height() / 2)
@@ -44,7 +44,7 @@ class Tile(pygame.sprite.Sprite):
         tileMidhigh = (self.size / 2) - ((self.size * self.borderScale) / 2)
 
         self.tile.fill(color)
-        self.image.fill(self.theme.tileBorderColor)
+        self.image.fill((abs(color[0]-32),abs(color[1]-32),abs(color[2]-32)))
         
         self.image.blit(self.tile, (tileMidwide,tileMidhigh))
         self.image.blit(number, (numMidwide,numMidhigh))
@@ -82,9 +82,9 @@ class NumberTile(Tile):
             else:
                 self.image.fill(self.theme.tileColor)
         elif self.flagged:
-            self.draw("F", self.theme.tileColor)
+            self.draw("F", self.theme.tileCoverColor)
         else:
-            self.draw("", self.theme.tileColor)
+            self.draw("", self.theme.tileCoverColor)
 
 class MineTile(Tile):
     def __init__(self, pos, theme, size = 16):
@@ -94,6 +94,6 @@ class MineTile(Tile):
         if self.uncovered:
             self.draw("X", self.theme.mineColor)
         elif self.flagged:
-            self.draw("F", self.theme.tileColor)
+            self.draw("F", self.theme.tileCoverColor)
         else:
-            self.draw("", self.theme.tileColor)
+            self.draw("", self.theme.tileCoverColor)
