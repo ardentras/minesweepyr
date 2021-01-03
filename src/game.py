@@ -81,12 +81,16 @@ class Difficulty():
 class MenuOption():
     def __init__(self, name, options, theme, pos):
         self.theme = theme
+        self.name = name
 
         self.centerPosition = pos
         self.options = options
         self.currentOption = self.options.popleft()
 
-        self.text = self.theme.textFont.render(name, True, self.theme.textColor)
+        self.initText()
+
+    def initText(self):
+        self.text = self.theme.textFont.render(self.name, True, self.theme.textColor)
         self.leftButton = self.theme.textFont.render("<", True, self.theme.textColor)
         self.rightButton = self.theme.textFont.render(">", True, self.theme.textColor)
 
@@ -131,6 +135,10 @@ class MenuOption():
     def getCurrentOption(self):
         return self.currentOption
 
+    def setTheme(self, theme):
+        self.theme = theme
+        self.initText()
+
 class Game():
     def __init__(self, tileSize, screenSize):
         self.screenSize = screenSize
@@ -141,12 +149,12 @@ class Game():
             
         settings = json.loads(settingsText)
 
-        self.THEMES = deque()
-        self.THEMES.append(Theme())
+        THEMES = deque()
+        self.theme = Theme()
+        THEMES.append(self.theme)
         if "themes" in settings:
             for theme in settings["themes"]:
-                self.THEMES.append(Theme(theme))
-        self.theme = self.THEMES.popleft()
+                THEMES.append(Theme(theme))
         
         DIFFICULTIES = deque()
         for difficulty in settings['difficulties']:
@@ -156,6 +164,9 @@ class Game():
         for boardSize in settings['boardSizes']:
             BOARD_SIZES.append((boardSize[0], boardSize[1]))
 
+        themeOptionPosition = (self.screenSize[0] * 3 / 4, self.screenSize[1] - ((self.theme.textFont.get_height() + TEXT_MARGIN) * 2))
+        self.themeOption = MenuOption("THEME", THEMES, self.theme, themeOptionPosition)
+
         difficultyOptionPosition = (self.screenSize[0] / 2, self.screenSize[1] - ((self.theme.textFont.get_height() + TEXT_MARGIN) * 2))
         self.difficultyOption = MenuOption("DIFFICULTY", DIFFICULTIES, self.theme, difficultyOptionPosition)
 
@@ -164,6 +175,9 @@ class Game():
 
         self.gameBoard = board.Board(tileSize, screenSize, self.boardSizeOption.getCurrentOption(), self.difficultyOption.getCurrentOption(), self.theme)
         
+        self.initText()
+
+    def initText(self):
         self.winText = self.theme.textFont.render("Congratulations, you won!", True, self.theme.textColor)
         self.howToPlayText = self.theme.textFont.render("Left click to reveal. Right click to flag.", True, self.theme.textColor)
         self.playAgainText = self.theme.textFont.render("Click anywhere on the board to start.", True, self.theme.textColor)
@@ -173,6 +187,7 @@ class Game():
 
         self.difficultyOption.draw(screen, (lambda e: e.getName()))
         self.boardSizeOption.draw(screen, (lambda e: "%d x %d" % e))
+        self.themeOption.draw(screen, (lambda e: e.name))
 
         if self.gameBoard.hasWon():
             screen.blit(self.winText, ((self.screenSize[0] / 2) - (self.winText.get_width() / 2), TEXT_MARGIN))
@@ -188,11 +203,18 @@ class Game():
         self.gameBoard.draw(screen)
 
     def processClick(self, event):
+        if self.themeOption.processClick(event):
+            self.theme = self.themeOption.getCurrentOption()
+            self.updateTheme()
         if self.difficultyOption.processClick(event):
             self.gameBoard.setDifficulty(self.difficultyOption.getCurrentOption())
         if self.boardSizeOption.processClick(event):
             self.gameBoard.setTileBoardSize(self.boardSizeOption.getCurrentOption())
         self.gameBoard.processClick(event)
 
-    def getGameBoard(self):
-        return self.gameBoard
+    def updateTheme(self):
+        self.initText()
+        self.gameBoard.setTheme(self.theme)
+        self.difficultyOption.setTheme(self.theme)
+        self.boardSizeOption.setTheme(self.theme)
+        self.themeOption.setTheme(self.theme)

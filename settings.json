@@ -26,23 +26,24 @@
     ],
     "themes": [
         {
-            "name": "something new",
+            "name": "Random",
             "textFont": {
-                "name": "Courier New",
-                "size": 14
+                "name": "Verdana",
+                "size": 14,
+                "bold": true
             },
             "tileFont": {
                 "name": "Courier New",
                 "size": 16
             },
             "colors": {
-                "text": "ffffff",
-                "background": "888888",
-                "board": "000000",
-                "tile": "ffffff",
-                "tileCover": "dfdfdf",
-                "tileBorder": "dfdfdf", 
-                "mine": "cc3b00"
+                "text": "0ed0d1",
+                "background": "02672d",
+                "board": "8c8523",
+                "tile": "83f074",
+                "tileCover": "0b05a3",
+                "tileBorder": "8c7e95", 
+                "mine": "3fc810"
             }
         }
     ]

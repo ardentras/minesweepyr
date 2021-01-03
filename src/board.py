@@ -24,6 +24,8 @@ class Board():
         self.tileGroup = pygame.sprite.Group()
         self.mineGroup = pygame.sprite.Group()
 
+        self.tileMatrix = []
+
         self.flaggable = 0
         self.setTileSize(tileSize)
         self.tileBoardSize = tileBoardSize
@@ -36,11 +38,13 @@ class Board():
         self.updateTileBoard()
         
     def draw(self, screen):
+        self.tileBoard.fill(self.theme.boardColor)
         self.tileGroup.draw(self.tileBoard)
         self.mineGroup.draw(self.tileBoard)
         screen.blit(self.tileBoard, self.getTileBoardRelativeCenter())
 
         if not self.playable:
+            self.tileBoardOverlay.fill(self.theme.boardColor)
             screen.blit(self.tileBoardOverlay, self.getTileBoardRelativeCenter())
 
     def processClick(self, event):
@@ -176,10 +180,8 @@ class Board():
     def updateTileBoard(self):
         self.resetGame()
         self.tileBoard = pygame.Surface(self.tileBoardSize)
-        self.tileBoard.fill(self.theme.boardColor)
         self.tileBoardOverlay = pygame.Surface(self.tileBoardSize)
         self.tileBoardOverlay.set_alpha(64, pygame.RLEACCEL)
-        self.tileBoardOverlay.fill(self.theme.boardColor)
 
     def win(self):
         self.playable = False
@@ -239,3 +241,10 @@ class Board():
     def setDifficulty(self, d):
         self.difficulty = d
         self.resetGame()
+
+    def setTheme(self, theme):
+        self.theme = theme
+        for tileRow in self.tileMatrix:
+            for tile in tileRow:
+                tile.setTheme(self.theme)
+                tile.redraw()

@@ -68,6 +68,9 @@ class Tile(pygame.sprite.Sprite):
     def getValue(self):
         return int(self.value) if self.value != 'X' else 9
 
+    def setTheme(self, theme):
+        self.theme = theme
+
 class NumberTile(Tile):
     def __init__(self, value, pos, theme, size = 16):
         super().__init__(value, pos, theme, size)
